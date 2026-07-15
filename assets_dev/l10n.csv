@@ -1,15 +1,59 @@
 key,zh_CN
-Title,=== 回合制对战游戏 ===
+Title,AI 命运法庭
+Subtitle,策略 · 随机事件 · 一次申诉
 NamePrompt,请输入玩家名字：
 NameEmpty,名字不能为空，请重新输入。
 InputEnded,输入已结束，游戏退出。
-ComputerName,电脑
-Versus,{0} 对战 {1}
-Rules,双方生命值 {0}，攻击力 {1}，治疗可恢复 {2} 点生命。
-Status,状态：{0} {1}/{2} | {3} {4}/{5}
-ActionPrompt,请选择动作（1：攻击，2：治疗）：
-InvalidAction,无效选择，请输入 1 或 2。
-Attack,{0} 发起攻击，造成 {1} 点伤害。
-Health,{0} 当前生命：{1}/{2}
-Heal,{0} 恢复 {1} 点生命。
-Winner,胜者：{0}
+ComputerName,DeepSeek 对手
+DifficultyPrompt,选择电脑难度（1：简单  2：中等  3：困难）：
+FatePrompt,选择命运模式（1：英雄  2：公平  3：残酷）：
+InvalidChoice,输入无效，请重新选择。
+AiOnline,DeepSeek 已启用：三个角色使用隔离上下文，调用失败时自动回退
+AiOffline,未配置 DEEPSEEK_API_KEY：当前使用本地策略和本地裁判
+BattleIntro,{0} VS {1}
+BattleRules,攻击克制破防，防御克制攻击，破防克制防御；成功防御获得能量，治疗消耗 2 能量。
+RoundHeader,第 {0} 回合
+StatusName,{0}
+StatusHealth,生命 {0}/{1}  {2}
+StatusEnergy,能量 {0}/3  {1}
+StatusAppeal,申诉机会：{0}
+AppealAvailable,可用
+AppealUsed,已使用
+ActionPrompt,秘密选择动作（1：攻击  2：防御  3：破防  4：治疗）：
+HealEnergyMissing,能量不足，治疗需要 2 点能量。
+ActionAttack,攻击
+ActionGuard,防御
+ActionBreak,破防
+ActionHeal,治疗
+BothAction,双方同时选择了{0}。
+ActionReveal,{0}选择了{1}；{2}选择了{3}。
+DamageLine,{0}受到 {1} 点伤害。
+HealingLine,{0}恢复 {1} 点生命。
+GuardEnergy,{0}成功防御并获得 1 点能量。
+AiThinking,电脑正在锁定本回合策略……
+EventHeader,命运事件
+EventProposal,{0}
+EventEffect,目标：{0}　效果：{1}
+EffectRestore,恢复 {0} 点生命
+EffectLoss,损失 {0} 点生命（事件不能致死）
+EffectEnergy,获得 {0} 点能量
+HumanAppealPrompt,事件对你不利。是否使用唯一一次申诉？（y/n）：
+AppealArgumentPrompt,请输入申诉理由（最多 200 字）：
+ComputerAppeal,{0}提出申诉：{1}
+JudgeThinking,独立裁判正在审理……
+VerdictRevoke,裁决：申诉成立，撤销事件。
+VerdictUphold,裁决：申诉驳回，维持事件。
+VerdictReason,理由：{0}
+EventApplied,事件已经生效。
+EventCancelled,事件已取消，战斗状态保持不变。
+ResultHeader,最终裁决
+HumanWinner,胜者：{0}
+ComputerWinner,胜者：{0}
+Draw,双方同时倒下，本局平局。
+Farewell,命运已经落笔，感谢参与本次审判。
+LocalAppealArgument,该事件在关键生命区间明显改变胜负，请依据公平预算撤销。
+LocalEventRestore,治愈之雨回应了坚持战斗的一方。
+LocalEventLoss,血月投下阴影，命运要求一方付出代价。
+LocalEventEnergy,能量喷泉涌现，战意得到补充。
+LocalJudgeRevoke,申诉引用了可验证的公平依据，事件撤销。
+LocalJudgeUphold,申诉缺少可验证的战斗证据，维持事件。

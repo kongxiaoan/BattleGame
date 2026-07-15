@@ -26,6 +26,9 @@ dist/
 ._*
 
 # 临时文件和日志
+.env
+.env.*
+!.env.example
 *.tmp
 *.temp
 *.log

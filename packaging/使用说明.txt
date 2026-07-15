@@ -16,3 +16,12 @@ BattleGame 使用说明
    ./BattleGame
 
 游戏已经包含 .NET 运行时，无需另外安装 .NET。
+
+DeepSeek AI（可选）
+
+- 不配置 API Key 也可以完整游玩，游戏会使用本地电脑策略和本地裁判。
+- 如需在线 DeepSeek，请为每位玩家使用自己的 Key，不要分享或写入游戏文件。
+- 在终端进入解压目录后运行：
+  export DEEPSEEK_API_KEY="你的 Key"
+  export DEEPSEEK_MODEL="deepseek-chat"
+  ./BattleGame
