@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BattleGame.Cli", "BattleGame.Cli\BattleGame.Cli.csproj", "{B267740C-9ECA-4C92-AE4B-B308D83A032B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BattleGame.Core", "BattleGame.Core\BattleGame.Core.csproj", "{2BF76AA7-669C-405D-8BC1-7EDEC2C9D568}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BattleGame.Tests", "BattleGame.Tests\BattleGame.Tests.csproj", "{E305DA97-664B-4E52-A6A9-AB732D200CDC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B267740C-9ECA-4C92-AE4B-B308D83A032B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B267740C-9ECA-4C92-AE4B-B308D83A032B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B267740C-9ECA-4C92-AE4B-B308D83A032B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B267740C-9ECA-4C92-AE4B-B308D83A032B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2BF76AA7-669C-405D-8BC1-7EDEC2C9D568}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2BF76AA7-669C-405D-8BC1-7EDEC2C9D568}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2BF76AA7-669C-405D-8BC1-7EDEC2C9D568}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2BF76AA7-669C-405D-8BC1-7EDEC2C9D568}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E305DA97-664B-4E52-A6A9-AB732D200CDC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E305DA97-664B-4E52-A6A9-AB732D200CDC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E305DA97-664B-4E52-A6A9-AB732D200CDC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E305DA97-664B-4E52-A6A9-AB732D200CDC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

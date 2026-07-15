@@ -1,0 +1,18 @@
+BattleGame 使用说明
+
+1. 根据电脑类型选择压缩包：
+   - Apple Silicon：M1、M2、M3、M4 等芯片使用 arm64 版。
+   - Intel：使用 x64 版。
+
+2. 解压 ZIP 后，双击“开始游戏.command”。
+
+3. 如果 macOS 提示无法验证开发者：
+   - 在“系统设置 → 隐私与安全性”中找到拦截提示。
+   - 确认文件来自可信朋友后，选择“仍要打开”。
+
+4. 如果仍无法启动，可打开“终端”，进入解压目录后执行：
+   chmod +x BattleGame 开始游戏.command
+   xattr -d com.apple.quarantine BattleGame 开始游戏.command
+   ./BattleGame
+
+游戏已经包含 .NET 运行时，无需另外安装 .NET。

@@ -1,0 +1,15 @@
+key,zh_CN
+Title,=== 回合制对战游戏 ===
+NamePrompt,请输入玩家名字：
+NameEmpty,名字不能为空，请重新输入。
+InputEnded,输入已结束，游戏退出。
+ComputerName,电脑
+Versus,{0} 对战 {1}
+Rules,双方生命值 {0}，攻击力 {1}，治疗可恢复 {2} 点生命。
+Status,状态：{0} {1}/{2} | {3} {4}/{5}
+ActionPrompt,请选择动作（1：攻击，2：治疗）：
+InvalidAction,无效选择，请输入 1 或 2。
+Attack,{0} 发起攻击，造成 {1} 点伤害。
+Health,{0} 当前生命：{1}/{2}
+Heal,{0} 恢复 {1} 点生命。
+Winner,胜者：{0}

@@ -1,0 +1,32 @@
+# .NET 构建产物
+**/bin/
+**/obj/
+artifacts/
+TestResults/
+coverage/
+coverage.*
+*.nupkg
+*.snupkg
+
+# 本项目的可重新生成打包产物
+dist/
+
+# IDE 与用户级配置
+.vs/
+.idea/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+
+# macOS 文件系统元数据
+.DS_Store
+._*
+
+# 临时文件和日志
+*.tmp
+*.temp
+*.log
+*~
