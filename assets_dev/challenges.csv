@@ -1,0 +1,4 @@
+id,prompt,expected_text,required_count,duration_seconds,restore_health
+cheer_typing,30 秒内正确输入 25 次“加油”,加油,25,30,5
+reverse_memory,20 秒内把数字“4927”倒序输入,7294,1,20,5
+logic_sequence,20 秒内回答：2、4、8、16 的下一项是什么？,32,1,20,5

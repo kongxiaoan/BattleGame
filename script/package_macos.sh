@@ -5,6 +5,7 @@ script_dir="$(cd "$(dirname "$0")" && pwd)"
 project_root="$(cd "$script_dir/.." && pwd)"
 solution="$project_root/BattleGame.sln"
 cli_project="$project_root/BattleGame.Cli/BattleGame.Cli.csproj"
+server_project="$project_root/BattleGame.Server/BattleGame.Server.csproj"
 dist_dir="$project_root/dist"
 packaging_dir="$project_root/packaging"
 
@@ -41,7 +42,7 @@ require_command() {
     }
 }
 
-for command_name in dotnet python3 ditto codesign file shasum xattr; do
+for command_name in dotnet python3 ditto codesign file shasum xattr curl; do
     require_command "$command_name"
 done
 
@@ -52,8 +53,13 @@ fi
 
 mkdir -p "$dist_dir"
 staging_dir="$(mktemp -d "${TMPDIR:-/tmp}/BattleGame-package.XXXXXX")"
+server_pid=""
 
 cleanup() {
+    if [[ -n "$server_pid" ]]; then
+        kill "$server_pid" >/dev/null 2>&1 || true
+        wait "$server_pid" >/dev/null 2>&1 || true
+    fi
     # 临时目录完全由本脚本创建，可以在成功或失败时安全清理。
     rm -rf -- "$staging_dir"
 }
@@ -64,12 +70,14 @@ publish_runtime() {
     local folder_name="$2"
     local expected_architecture="$3"
     local output_dir="$staging_dir/$folder_name"
+    local server_output_dir="$staging_dir/$folder_name-server"
 
     echo
     echo "正在发布 $runtime_id..."
 
     # 两种 RID 顺序还原和发布，避免共享 obj 目录产生并发写入冲突。
     dotnet restore "$cli_project" -r "$runtime_id"
+    dotnet restore "$server_project" -r "$runtime_id"
     dotnet publish "$cli_project" \
         -c Release \
         -r "$runtime_id" \
@@ -79,15 +87,37 @@ publish_runtime() {
         -p:DebugType=None \
         -p:DebugSymbols=false \
         -o "$output_dir"
+    dotnet publish "$server_project" \
+        -c Release \
+        -r "$runtime_id" \
+        --self-contained true \
+        --no-restore \
+        -p:PublishSingleFile=true \
+        -p:DebugType=None \
+        -p:DebugSymbols=false \
+        -o "$server_output_dir"
 
     mv "$output_dir/BattleGame.Cli" "$output_dir/BattleGame"
-    cp "$packaging_dir/开始游戏.command" "$packaging_dir/使用说明.txt" "$output_dir/"
-    chmod +x "$output_dir/BattleGame" "$output_dir/开始游戏.command"
+    mv "$server_output_dir/BattleGame.Server" "$output_dir/BattleGameServer"
+    rm -rf -- "$server_output_dir"
+    cp \
+        "$packaging_dir/开始游戏.command" \
+        "$packaging_dir/启动局域网服务器.command" \
+        "$packaging_dir/在线服务器地址.txt" \
+        "$packaging_dir/使用说明.txt" \
+        "$output_dir/"
+    chmod +x \
+        "$output_dir/BattleGame" \
+        "$output_dir/BattleGameServer" \
+        "$output_dir/开始游戏.command" \
+        "$output_dir/启动局域网服务器.command"
 
     # 清除构建机扩展属性并进行临时签名，保证文件完整性；这不等同于 Apple 公证。
     xattr -cr "$output_dir"
     codesign --force --sign - "$output_dir/BattleGame"
+    codesign --force --sign - "$output_dir/BattleGameServer"
     codesign --verify --verbose=2 "$output_dir/BattleGame"
+    codesign --verify --verbose=2 "$output_dir/BattleGameServer"
 
     local file_description
     file_description="$(file "$output_dir/BattleGame")"
@@ -95,10 +125,19 @@ publish_runtime() {
         echo "架构验证失败：$file_description" >&2
         exit 1
     }
+    file_description="$(file "$output_dir/BattleGameServer")"
+    [[ "$file_description" == *"$expected_architecture"* ]] || {
+        echo "服务端架构验证失败：$file_description" >&2
+        exit 1
+    }
 }
 
 echo "正在生成词条代码..."
 "$script_dir/generate_l10n.sh"
+"$script_dir/generate_questions.sh"
+"$script_dir/generate_challenges.sh"
+"$script_dir/generate_tags.sh"
+"$script_dir/generate_fate_events.sh"
 
 echo "正在运行项目测试..."
 dotnet test "$solution"
@@ -123,13 +162,86 @@ esac
 echo
 echo "正在执行本机架构冒烟测试..."
 "$staging_dir/$smoke_folder/BattleGame" >/dev/null <<'EOF'
+1
 打包检查
 1
 1
 1
 1
 1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 EOF
+
+echo "正在执行局域网服务器健康检查..."
+server_log="$staging_dir/server-smoke.log"
+smoke_database="$staging_dir/server-smoke-data/battle-game.db"
+BATTLEGAME_DATA_PATH="$smoke_database" "$staging_dir/$smoke_folder/BattleGameServer" \
+    --urls http://127.0.0.1:15088 >"$server_log" 2>&1 &
+server_pid="$!"
+server_ready=0
+for _ in {1..30}; do
+    if curl --fail --silent http://127.0.0.1:15088/health \
+        | grep -q '"protocolVersion":1'; then
+        server_ready=1
+        break
+    fi
+    sleep 0.2
+done
+if [[ "$server_ready" -ne 1 ]]; then
+    echo "局域网服务器健康检查失败：" >&2
+    sed -n '1,120p' "$server_log" >&2
+    exit 1
+fi
+kill "$server_pid"
+wait "$server_pid" >/dev/null 2>&1 || true
+server_pid=""
+rm -rf -- "$staging_dir/server-smoke-data"
 
 echo "正在生成 ZIP 压缩包和 SHA-256 校验值..."
 ditto -c -k --norsrc --keepParent \

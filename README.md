@@ -1,176 +1,191 @@
-# BattleGame
+# BattleGame：AI 命运法庭
 
-BattleGame 是一个使用 C# 编写的双人回合制战斗模型，并提供“玩家对电脑”的控制台交互游戏。玩家每回合可以攻击或治疗，电脑固定执行攻击；任一角色生命值归零时战斗结束。
+一个使用 C#、.NET 10、ASP.NET Core、SQLite 和 DeepSeek 构建的策略控制台游戏。既支持玩家与电脑单机对战，也支持两台 Mac 通过局域网房间码进行服务端权威的真人对战；客户端地址可以一键切换为公网 `wss://` 服务。
 
-项目的重点不只是完成控制台玩法，还包括业务规则封装、分层设计、TDD、输入输出可测试性以及 macOS 双架构分发。
+即使没有配置 DeepSeek，游戏也会自动使用本地策略、事件导演和规则裁判，保持完整可玩。
 
-## 游戏规则
-
-- 玩家和电脑初始生命值均为 100。
-- 双方攻击力均为 20。
-- 玩家先行动，每回合选择攻击或治疗。
-- 攻击使目标损失 20 点生命。
-- 治疗最多恢复 15 点生命，但不会超过最大生命值。
-- 电脑回合固定攻击玩家。
-- 无效输入会重新提示，不会消耗回合。
-- 生命值降至 0 的角色死亡，另一方成为胜者。
-
-当前没有治疗次数限制。由于电脑每回合造成 20 点伤害，而治疗最多恢复 15 点，玩家无法通过持续治疗让战斗永久停滞。
+第一次游玩建议先阅读独立的 [完整玩法说明](docs/gameplay/README.md)。
 
 ## 快速开始
-
-开发环境需要 .NET 10 SDK：
 
 ```bash
 dotnet run --project BattleGame.Cli/BattleGame.Cli.csproj
 ```
 
-运行测试：
+启用 DeepSeek：
 
 ```bash
-dotnet test BattleGame.sln
+export DEEPSEEK_API_KEY="你的 API Key"
+export DEEPSEEK_MODEL="deepseek-chat"   # 可选，可替换成账户当前可用模型
+dotnet run --project BattleGame.Cli/BattleGame.Cli.csproj
 ```
+
+API Key 只从环境变量读取，禁止写入源码、CSV、配置模板或 macOS 发布包。`.env` 已加入 `.gitignore`。
+
+## 游戏规则
+
+双方初始拥有 100 点生命、0 点能量，能量上限为 3。
+
+| 动作 | 效果 | 策略关系 |
+|---|---|---|
+| 攻击 | 通常造成 20 伤害 | 对破防和治疗稳定施压 |
+| 防御 | 把攻击伤害降为 5，成功时获得 1 能量 | 克制攻击，但害怕破防 |
+| 破防 | 通常造成 10 伤害，对防御造成 30 | 克制防御，但收益不稳定 |
+| 治疗 | 消耗 2 能量，最多恢复 25 生命 | 放弃伤害换取生存空间 |
+
+双方动作先锁定，再同时结算。因此一方本轮受到致命伤害，也能完成已经锁定的动作；双方同时死亡时判定平局。电脑的决策任务在读取玩家本回合输入之前启动，不能偷看玩家选择。
+
+## 难度与命运模式
+
+电脑 Agent 返回动作排序，最终强度由 C# 代码控制，而不是只用提示词要求模型“变简单”：
+
+| 难度 | 选择最优动作概率 |
+|---|---:|
+| 简单 | 40% |
+| 中等 | 70% |
+| 困难 | 90% |
+
+事件偏向与电脑智力分开设置：
+
+| 命运模式 | 事件有利于玩家的概率 |
+|---|---:|
+| 英雄 | 65% |
+| 公平 | 50% |
+| 残酷 | 35% |
+
+每三回合触发一次事件，每局最多两次。当前受控事件包括恢复生命、损失生命和获得能量；随机事件伤害最低保留 1 点生命，不能直接决定胜负。
+
+## 申诉机制
+
+事件产生后暂不修改状态，先确定不利方：
+
+```text
+事件提案
+  → 不利方是否还有申诉机会
+  → 玩家输入理由 / 电脑 Agent 组织理由
+  → 独立裁判 Agent 审理
+  → 维持事件或撤销事件
+  → C# 规则引擎执行最终结果
+```
+
+双方各有一次申诉机会，只有实际提交申诉才会消耗。用户理由最多 200 字，并被作为不可信数据包裹；模型返回的裁决必须解析成 `uphold` 或 `revoke`，其他输出会被拒绝并交给本地裁判。
 
 ## 项目架构
 
 ```mermaid
 flowchart LR
-    User["玩家输入"] --> Program["Program：组合入口"]
-    Program --> ConsoleGame["ConsoleGame：交互流程"]
-    ConsoleGame --> Battle["Battle：回合与胜负"]
-    Battle --> Player["Player：生命、攻击和治疗"]
+    CLI["ConsoleGame / ConsoleTheme"] --> Core["StrategicBattle"]
+    CLI --> WS["WebSocket Client"]
+    WS --> Server["ASP.NET Core Server"]
+    Server --> Online["OnlineRoom 状态机"]
+    Online --> Core
+    Server --> DB["SQLite 战绩与标签"]
+    Server --> DS
+    CLI --> Opponent["IOpponentAgent"]
+    CLI --> Director["IEventDirector"]
+    CLI --> Judge["IAppealJudge"]
+    Opponent --> DS["DeepSeekJsonClient"]
+    Director --> DS
+    Judge --> DS
+    Opponent --> Local["LocalGameIntelligence"]
+    Director --> Local
+    Judge --> Local
+    Core --> Combatant
+    Core --> Event["BattleEvent"]
     CSV["assets_dev/l10n.csv"] --> Generator["generate_l10n.sh"]
-    Generator --> GameText["GameText.g.cs"]
-    GameText --> ConsoleGame
-    Tests["NUnit 测试"] --> ConsoleGame
-    Tests --> Battle
-    Tests --> Player
+    Generator --> Text["GameText.g.cs"]
+    Text --> CLI
 ```
 
 ### BattleGame.Core
 
-核心领域层，目标框架为 `netstandard2.1`，不依赖控制台或测试框架，因此可以被不同类型的前端复用。
+目标框架为 `netstandard2.1`，完全不知道控制台、HTTP 或 DeepSeek 的存在。
 
-- `Player`：维护名称、最大生命值、当前生命值和攻击力，并实现受伤、治疗、攻击规则。
-- `Battle`：维护当前行动者、当前防守者、胜者和回合切换。
-- `BattleAction`：描述攻击和治疗动作，避免领域层依赖控制台中的字符串 `"1"`、`"2"`。
-
-`Health` 使用私有 setter，外部不能直接修改生命值。`IsAlive` 由生命值实时推导，`IsFinished` 由 `Winner` 推导，从而避免同时保存多份可能不一致的状态。
+- `StrategicBattle`：动作合法性、同时结算、能量、胜负、事件应用和申诉次数。
+- `Combatant`：受控生命与能量状态，setter 不向外部开放。
+- `BattleEvent`：通过工厂方法限制事件类型和数值边界。
+- `DifficultyPolicy`：用明确概率把动作排序转换成最终选择。
+- 原有 `Player` / `Battle`：保留基础领域模型和历史测试，便于比较线性回合与战略回合设计。
 
 ### BattleGame.Cli
 
-控制台表现层，目标框架为 `net10.0`。
+目标框架为 `net10.0`，承担应用编排和外部适配。
 
-- `Program`：只负责把 `Console.In` 和 `Console.Out` 传给游戏流程。
-- `ConsoleGame`：读取名称和动作、控制电脑、显示生命值与胜者。
-- `GameText.g.cs`：由 CSV 自动生成的中文词条，禁止手工修改。
+- `ConsoleGame`：启动配置、秘密选招、事件与申诉状态机。
+- `ConsoleTheme`：ANSI 颜色、标题、分节、生命条和能量条。
+- `DeepSeekJsonClient`：调用 `/chat/completions`，请求 JSON 输出。
+- `DeepSeekOpponentAgent`：只负责电脑动作排序和电脑申诉。
+- `DeepSeekEventDirector`：在事件白名单和数值范围内提出事件。
+- `DeepSeekAppealJudge`：使用隔离提示词审理双方申诉。
+- `LocalGameIntelligence`：断网、超时、非法 JSON 或无 Key 时的完整回退。
+- `AiResponseParser`：把模型输出视为不可信输入，过滤动作并验证事件和裁决。
+- `SpectreGameShell`：单机、局域网、公网和个人中心入口。
+- `OnlineConsoleGame`：真人对战、限时答题、绝境任务、命运申诉和断线恢复。
 
-`ConsoleGame` 接收 `TextReader` 和 `TextWriter`，没有直接把交互逻辑绑定到全局 `Console`。测试可以使用 `StringReader` 模拟整局输入，使用 `StringWriter` 检查完整输出。
+### BattleGame.Online / Server / Persistence
 
-### BattleGame.Tests
+- `OnlineRoom`：服务端权威回合、15 秒自动出招、题目、绝境任务和命运申诉状态机。
+- `OnlineCommandProcessor`：WebSocket 命令校验、广播、DeepSeek 编排和本地降级。
+- `SqlitePlayerProfileService`：设备身份哈希、战绩、标签与幂等赛果持久化。
+- `BattleGame.Server`：默认监听 `0.0.0.0:5088`，同一程序可部署到公网并启用 TLS 反向代理。
 
-使用 NUnit 测试核心规则和端到端控制台流程，目标框架为 `net10.0`。
+更详细的信任边界与 JSON 协议见 [AI 架构文档](docs/AI_ARCHITECTURE.md)。联网双人、限时抢答、绝境裁决与标签系统的产品范围和开发排期见 [联网益智对战 PRD](docs/ONLINE_BATTLE_PRD.md)。
 
-主要覆盖：
+## DeepSeek 集成原则
 
-- 构造参数和非法状态校验。
-- 普通伤害、致命伤害和生命值下限。
-- 普通治疗、过量治疗、满血治疗和死亡后禁止治疗。
-- 攻击者或目标死亡时禁止攻击。
-- 攻击、治疗、回合交换、胜者记录和结束后禁止继续行动。
-- 空名称、非法动作、玩家获胜和电脑获胜的完整控制台流程。
+DeepSeek 官方提供 Chat Completion、JSON Output 和 Tool Calls；本项目当前使用 Chat Completion 的 JSON 输出，并在本地进行二次验证：
 
-## 核心调用流程
+- [Chat Completion](https://api-docs.deepseek.com/api/create-chat-completion)
+- [JSON Output](https://api-docs.deepseek.com/guides/json_mode)
+- [Tool Calls](https://api-docs.deepseek.com/guides/tool_calls)
 
-玩家攻击时：
+模型不能直接调用 `Combatant` 修改状态，也不能返回任意数值。即使模型输出合法 JSON，仍必须满足领域白名单、当前能量、事件上限和裁决枚举。
 
-```text
-ConsoleGame 读取“1”
-    → Battle.ExecuteTurn(BattleAction.Attack, 15)
-    → Player.Attack(target)
-    → target.TakeDamage(AttackPower)
-    → 判定胜者或交换回合
-```
+外部请求超时为 20 秒。网络错误、超时、空响应、非法 JSON、非法动作、越界事件和未知裁决都会回退本地实现，不会让对局卡死。
 
-玩家治疗时：
-
-```text
-ConsoleGame 读取“2”
-    → Battle.ExecuteTurn(BattleAction.Heal, 15)
-    → Player.Heal(15)
-    → 限制到 MaxHealth
-    → 交换回合
-```
-
-只有合法输入才会调用 `Battle`，因此重新提示不会意外推进回合。
-
-## 技术栈
-
-| 范围 | 技术 | 用途 |
-|---|---|---|
-| 语言 | C# 9 / 最新 C# | Core 固定 C# 9，CLI 和测试使用 SDK 对应语言版本 |
-| 运行时 | .NET 10 | 控制台应用、测试和发布 |
-| 可复用核心 | .NET Standard 2.1 | 降低 Core 对具体宿主运行时的耦合 |
-| 测试 | NUnit 4 | 单元测试和控制台流程测试 |
-| 测试运行 | Microsoft.NET.Test.Sdk | 发现与执行测试 |
-| 覆盖率 | coverlet.collector | 支持收集代码覆盖率 |
-| macOS 发布 | `dotnet publish` | 生成 self-contained 单文件程序 |
-| 签名与压缩 | `codesign`、`ditto` | 临时签名、ZIP 打包和权限保留 |
-
-## TDD 工作方式
-
-功能开发遵循 Red、Green、Refactor：
-
-1. 先用测试描述玩家动作、状态变化和控制台可观察结果。
-2. 运行测试，确认测试因缺少目标行为而失败。
-3. 编写满足场景的最小实现。
-4. 运行全部测试，再整理结构和注释。
-
-打包脚本也有契约测试：
+## TDD 与测试
 
 ```bash
-./script/package_macos_tests.sh
+dotnet test BattleGame.sln
 ```
 
-契约测试检查帮助接口、非法参数、严格 Shell 模式、测试前置、词条生成、签名验证和 SHA-256 生成。真正的跨架构发布由完整执行打包脚本进行端到端验证。
+测试覆盖：
 
-## 词条生成
+- 原有玩家受伤、治疗、攻击与线性回合规则。
+- 同时攻击、攻防克制、破防惩罚、治疗能量约束和同时死亡。
+- 随机事件不能直接杀死角色。
+- 每方只有一次申诉。
+- 三档难度由代码控制最优动作概率。
+- 模型未知动作、重复动作和当前非法动作过滤。
+- 越界事件与未知裁决拒绝。
+- 控制台启动、事件展示、真人申诉、裁决撤销、无能量治疗重试和最终平局。
 
-控制台文案的唯一维护源是：
+开发遵循 Red → Green → Refactor：先让新行为测试因缺少实现而失败，再写最小实现，最后运行全量回归。
+
+## 词条与文案
+
+所有控制台文案维护在：
 
 ```text
 assets_dev/l10n.csv
 ```
 
-修改或新增文案后执行：
+修改后必须执行：
 
 ```bash
 ./script/generate_l10n.sh
 ```
 
-脚本会更新 `BattleGame.Cli/GameText.g.cs`。不要直接修改生成文件，也不要在业务代码中硬编码新增控制台文案。
+不要直接编辑 `BattleGame.Cli/GameText.g.cs`，也不要在业务代码中硬编码新增界面文案。
 
 ## macOS 打包
 
-在 macOS 开发机上运行：
-
 ```bash
+./script/package_macos_tests.sh
 ./script/package_macos.sh
 ```
 
-脚本会自动完成：
-
-1. 检查 .NET、Python、签名和压缩工具。
-2. 生成最新词条代码。
-3. 执行全部项目测试。
-4. 顺序发布 `osx-arm64` 和 `osx-x64`，避免共享 MSBuild 中间目录的并发冲突。
-5. 生成包含 .NET 运行时的 self-contained 单文件程序。
-6. 加入双击启动脚本和中文使用说明。
-7. 设置执行权限、清除扩展属性、执行临时签名并验证架构。
-8. 对本机架构执行一局自动冒烟测试。
-9. 生成两个 ZIP 和 SHA-256 校验文件。
-
-输出文件：
+输出：
 
 ```text
 dist/BattleGame-macOS-arm64.zip
@@ -178,40 +193,33 @@ dist/BattleGame-macOS-x64.zip
 dist/SHA256SUMS.txt
 ```
 
-- M1、M2、M3、M4 等 Apple 芯片使用 `arm64`。
-- Intel Mac 使用 `x64`。
-- 最终玩家不需要安装 .NET。
+两个版本均包含客户端和局域网服务器，也包含 .NET 运行时。朋友无需安装 .NET；联网 AI Key 只配置在运行服务器的 Mac 上，不会下发给玩家。
 
-脚本使用临时目录完成构建，成功后只替换 `dist` 中由它管理的固定名称，不会清空其他文件。
-
-## macOS 签名限制
-
-当前使用 `codesign --sign -` 进行临时签名，可以验证文件在打包过程中保持完整，但它不是 Apple Developer ID 签名，也没有经过 Apple 公证。
-
-朋友首次打开时仍可能遇到 Gatekeeper 提示。确认压缩包来自可信来源后，可以在“系统设置 → 隐私与安全性”中选择“仍要打开”。如果需要面向公众分发，应申请 Developer ID、使用时间戳签名，并提交 Apple notarization。
+当前采用临时签名，不是 Apple Developer ID 签名，也未经过公证。公开分发前仍需要正式签名和 notarization。
 
 ## 目录结构
 
 ```text
 BattleGame/
-├── BattleGame.Core/          # 玩家与战斗领域规则
-├── BattleGame.Cli/           # 控制台入口和交互流程
+├── BattleGame.Core/          # 基础与战略领域规则
+├── BattleGame.Cli/
+│   ├── Ai/                   # DeepSeek、回退与输出验证
+│   ├── ConsoleGame.cs        # 应用流程
+│   └── ConsoleTheme.cs       # 控制台视觉
 ├── BattleGame.Tests/         # NUnit 测试
-├── assets_dev/               # 中文词条 CSV
-├── packaging/                # 分发说明和双击启动脚本
-├── script/                   # 词条生成、打包及脚本测试
-├── dist/                     # 打包产物
-└── BattleGame.sln            # Visual Studio / dotnet 解决方案
+├── BattleGame.Online/        # 联网协议与权威房间状态机
+├── BattleGame.Persistence/   # SQLite 玩家、战绩和标签
+├── BattleGame.Server/        # WebSocket / HTTP 服务端
+├── assets_dev/               # 文案 CSV
+├── docs/                     # 玩法、AI 架构与联网版 PRD
+├── packaging/                # macOS 启动脚本和使用说明
+├── script/                   # 词条、测试和打包脚本
+└── dist/                     # 被 Git 忽略的可分发产物
 ```
 
-`bin` 和 `obj` 是 .NET 构建产生的中间目录，不属于业务源码。
+## 当前取舍与下一步
 
-## 设计取舍与风险
-
-- 当前电脑策略固定为攻击，便于验证规则，但没有策略选择或随机性。
-- 玩家属性是固定配置，还没有角色职业、技能、装备或难度系统。
-- `Player` 是公开的可变领域对象，外部代码理论上仍能绕过 `Battle` 直接调用攻击或受伤方法。扩展为复杂游戏时，可以考虑由战斗聚合统一拥有状态修改权限。
-- self-contained 发布兼容性好，但每个压缩包包含完整运行时，因此文件体积明显大于依赖系统 .NET 的发布方式。
-- 当前测试验证行为结果，但发布脚本没有连接 Apple 公证服务；公开分发前仍需要正式签名与公证流水线。
-
-这些约束适合当前教学型、小规模控制台项目。若加入更多动作、状态效果或多个敌人，建议把回合动作建模为独立命令，并把电脑决策抽象成可替换策略。
+- 局域网身份使用本机随机设备令牌，服务端只保存哈希；正式商用账号可替换身份适配层。
+- 房间状态当前在单进程内存中，SQLite 保存长期资料；水平扩容时需要 Redis/PostgreSQL。
+- DeepSeek 只选择受控事件和审理申诉，异常时回退本地裁判，不能绕过规则引擎。
+- 当前发布包为临时签名，公开商业分发仍需 Developer ID 签名、公证、TLS、隐私政策和真实双机灰度。

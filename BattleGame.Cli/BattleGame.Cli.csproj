@@ -9,6 +9,11 @@
 
     <ItemGroup>
       <ProjectReference Include="..\BattleGame.Core\BattleGame.Core.csproj" />
+      <ProjectReference Include="..\BattleGame.Online\BattleGame.Online.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Spectre.Console" Version="0.57.0" />
     </ItemGroup>
 
 </Project>
