@@ -32,4 +32,8 @@ dist/
 *.tmp
 *.temp
 *.log
+*.db
+*.db-shm
+*.db-wal
+data/
 *~

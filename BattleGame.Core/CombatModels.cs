@@ -111,9 +111,23 @@ namespace BattleGame.Core
             return actual;
         }
 
-        internal void GainEnergy(int amount)
+        internal int Revive(int amount)
         {
+            if (Health != 0 || amount <= 0)
+            {
+                throw new InvalidOperationException();
+            }
+
+            int actual = Math.Min(amount, MaxHealth);
+            Health = actual;
+            return actual;
+        }
+
+        internal int GainEnergy(int amount)
+        {
+            int before = Energy;
             Energy = Math.Min(Energy + amount, DefaultMaxEnergy);
+            return Energy - before;
         }
 
         internal void SpendEnergy(int amount)

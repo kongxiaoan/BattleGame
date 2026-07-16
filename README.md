@@ -1,6 +1,6 @@
 # BattleGame：AI 命运法庭
 
-一个使用 C#、.NET 10 和 DeepSeek 构建的策略控制台游戏。玩家与电脑秘密同时选招；每三回合可能出现一项受控命运事件；受到不利影响的一方整局只有一次申诉机会，由隔离上下文的裁判 Agent 审理。
+一个使用 C#、.NET 10、ASP.NET Core、SQLite 和 DeepSeek 构建的策略控制台游戏。既支持玩家与电脑单机对战，也支持两台 Mac 通过局域网房间码进行服务端权威的真人对战；客户端地址可以一键切换为公网 `wss://` 服务。
 
 即使没有配置 DeepSeek，游戏也会自动使用本地策略、事件导演和规则裁判，保持完整可玩。
 
@@ -75,6 +75,12 @@ API Key 只从环境变量读取，禁止写入源码、CSV、配置模板或 ma
 ```mermaid
 flowchart LR
     CLI["ConsoleGame / ConsoleTheme"] --> Core["StrategicBattle"]
+    CLI --> WS["WebSocket Client"]
+    WS --> Server["ASP.NET Core Server"]
+    Server --> Online["OnlineRoom 状态机"]
+    Online --> Core
+    Server --> DB["SQLite 战绩与标签"]
+    Server --> DS
     CLI --> Opponent["IOpponentAgent"]
     CLI --> Director["IEventDirector"]
     CLI --> Judge["IAppealJudge"]
@@ -113,8 +119,17 @@ flowchart LR
 - `DeepSeekAppealJudge`：使用隔离提示词审理双方申诉。
 - `LocalGameIntelligence`：断网、超时、非法 JSON 或无 Key 时的完整回退。
 - `AiResponseParser`：把模型输出视为不可信输入，过滤动作并验证事件和裁决。
+- `SpectreGameShell`：单机、局域网、公网和个人中心入口。
+- `OnlineConsoleGame`：真人对战、限时答题、绝境任务、命运申诉和断线恢复。
 
-更详细的信任边界与 JSON 协议见 [AI 架构文档](docs/AI_ARCHITECTURE.md)。
+### BattleGame.Online / Server / Persistence
+
+- `OnlineRoom`：服务端权威回合、15 秒自动出招、题目、绝境任务和命运申诉状态机。
+- `OnlineCommandProcessor`：WebSocket 命令校验、广播、DeepSeek 编排和本地降级。
+- `SqlitePlayerProfileService`：设备身份哈希、战绩、标签与幂等赛果持久化。
+- `BattleGame.Server`：默认监听 `0.0.0.0:5088`，同一程序可部署到公网并启用 TLS 反向代理。
+
+更详细的信任边界与 JSON 协议见 [AI 架构文档](docs/AI_ARCHITECTURE.md)。联网双人、限时抢答、绝境裁决与标签系统的产品范围和开发排期见 [联网益智对战 PRD](docs/ONLINE_BATTLE_PRD.md)。
 
 ## DeepSeek 集成原则
 
@@ -178,7 +193,7 @@ dist/BattleGame-macOS-x64.zip
 dist/SHA256SUMS.txt
 ```
 
-两个版本均为包含 .NET 运行时的 self-contained 单文件程序。朋友无需安装 .NET；如需在线 AI，每位玩家应使用自己的 API Key，或者由你另行提供不暴露密钥的服务端代理。
+两个版本均包含客户端和局域网服务器，也包含 .NET 运行时。朋友无需安装 .NET；联网 AI Key 只配置在运行服务器的 Mac 上，不会下发给玩家。
 
 当前采用临时签名，不是 Apple Developer ID 签名，也未经过公证。公开分发前仍需要正式签名和 notarization。
 
@@ -192,8 +207,11 @@ BattleGame/
 │   ├── ConsoleGame.cs        # 应用流程
 │   └── ConsoleTheme.cs       # 控制台视觉
 ├── BattleGame.Tests/         # NUnit 测试
+├── BattleGame.Online/        # 联网协议与权威房间状态机
+├── BattleGame.Persistence/   # SQLite 玩家、战绩和标签
+├── BattleGame.Server/        # WebSocket / HTTP 服务端
 ├── assets_dev/               # 文案 CSV
-├── docs/                     # 设计与协议文档
+├── docs/                     # 玩法、AI 架构与联网版 PRD
 ├── packaging/                # macOS 启动脚本和使用说明
 ├── script/                   # 词条、测试和打包脚本
 └── dist/                     # 被 Git 忽略的可分发产物
@@ -201,8 +219,7 @@ BattleGame/
 
 ## 当前取舍与下一步
 
-- 当前是单机玩家对电脑；网络双人和账号系统尚未实现。
-- DeepSeek 三个角色共享底层 HTTP 客户端，但不共享对话历史或系统提示。
-- 事件受白名单限制，AI 的创造性主要体现在事件选择、叙事和申诉语言。
-- 本地裁判使用证据关键词作为后备，不等同于在线模型的语义判断。
-- 后续适合加入战斗日志持久化、正式 JSON Schema、事件公平预算、回放种子和 AI 调用成本统计。
+- 局域网身份使用本机随机设备令牌，服务端只保存哈希；正式商用账号可替换身份适配层。
+- 房间状态当前在单进程内存中，SQLite 保存长期资料；水平扩容时需要 Redis/PostgreSQL。
+- DeepSeek 只选择受控事件和审理申诉，异常时回退本地裁判，不能绕过规则引擎。
+- 当前发布包为临时签名，公开商业分发仍需 Developer ID 签名、公证、TLS、隐私政策和真实双机灰度。

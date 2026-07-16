@@ -120,6 +120,43 @@ namespace BattleGame.Core
             }
         }
 
+        /// <summary>
+        /// 益智奖励通过规则引擎进入状态，联网层不能直接修改 Combatant。
+        /// 奖励只允许增加 1 点能量，并继续受能量上限约束。
+        /// </summary>
+        public int GrantKnowledgeEnergy(BattleSide side)
+        {
+            if (IsFinished)
+            {
+                throw new InvalidOperationException();
+            }
+
+            return GetCombatant(side).GainEnergy(1);
+        }
+
+        /// <summary>
+        /// 绝境成功是唯一允许从 0 生命恢复的入口，而且只能救活单方死亡的角色。
+        /// 双方同时死亡仍保持平局，联网层也不能绕过这里任意复活。
+        /// </summary>
+        public int ApplyLastChance(BattleSide side, int restoredHealth)
+        {
+            if (!IsFinished || restoredHealth is < 1 or > 5)
+            {
+                throw new InvalidOperationException();
+            }
+
+            Combatant target = GetCombatant(side);
+            Combatant opponent = side == BattleSide.Human ? Computer : Human;
+            if (target.IsAlive || !opponent.IsAlive)
+            {
+                throw new InvalidOperationException();
+            }
+
+            int actual = target.Revive(restoredHealth);
+            Outcome = BattleOutcome.Ongoing;
+            return actual;
+        }
+
         public bool CanAppeal(BattleSide side)
         {
             return side == BattleSide.Human

@@ -23,6 +23,8 @@
     <ItemGroup>
       <ProjectReference Include="..\BattleGame.Core\BattleGame.Core.csproj" />
       <ProjectReference Include="..\BattleGame.Cli\BattleGame.Cli.csproj" />
+      <ProjectReference Include="..\BattleGame.Online\BattleGame.Online.csproj" />
+      <ProjectReference Include="..\BattleGame.Persistence\BattleGame.Persistence.csproj" />
     </ItemGroup>
 
 </Project>

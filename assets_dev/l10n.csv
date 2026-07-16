@@ -57,3 +57,99 @@ LocalEventLoss,血月投下阴影，命运要求一方付出代价。
 LocalEventEnergy,能量喷泉涌现，战意得到补充。
 LocalJudgeRevoke,申诉引用了可验证的公平依据，事件撤销。
 LocalJudgeUphold,申诉缺少可验证的战斗证据，维持事件。
+AsciiTitle,BATTLE GAME
+MainMenuPrompt,选择审判模式
+MenuSingle,单机 · 挑战 DeepSeek 对手
+MenuLanCreate,局域网 · 创建好友房
+MenuLanJoin,局域网 · 加入好友房
+MenuOnlineCreate,在线服务 · 创建好友房
+MenuOnlineJoin,在线服务 · 加入好友房
+MenuExit,退出命运法庭
+LanServerPrompt,输入运行服务端那台 Mac 的 IP 或地址
+LanServerDefault,127.0.0.1
+OnlineServerMissing,尚未配置 BATTLEGAME_SERVER_URL，无法切换在线服务器。
+NetworkNamePrompt,输入联网昵称
+RoomCodePrompt,输入 6 位房间码
+NetworkConnecting,正在连接裁决服务器……
+NetworkConnected,连接成功
+NetworkConnectionFailed,连接失败：{0}
+RoomCreated,房间 {0} 已创建
+RoomJoinHint,让朋友选择“局域网 · 加入好友房”，输入你的局域网 IP 和房间码。
+WaitingGuest,等待第二名玩家进入法庭……
+WaitingOpponent,动作已经秘密锁定，等待对手……
+OpponentLocked,对手已经锁定动作
+NetworkRound,联网对战 · 第 {0} 回合
+NetworkModeLan,局域网
+NetworkModeOnline,在线服务器
+NetworkEndpoint,服务器：{0}
+NetworkRoom,房间：{0}
+NetworkActionPrompt,秘密选择本回合行动
+NetworkActionLocked,你的行动已锁定
+NetworkRoundResult,第 {0} 回合裁决
+NetworkDamage,{0} 受到 {1} 点伤害
+NetworkHealing,{0} 恢复 {1} 点生命
+NetworkWinnerYou,最终裁决：你获胜
+NetworkWinnerOpponent,最终裁决：{0} 获胜
+NetworkDraw,最终裁决：双方平局
+NetworkServerError,服务器拒绝请求：{0}
+NetworkDisconnected,与服务器的连接已断开。
+NetworkBackToMenu,按回车返回主菜单
+HealthLabel,生命
+EnergyLabel,能量
+LockedLabel,已锁定
+ChoosingLabel,选择中
+QuestionHeader,知识裁决 · {0}
+QuestionPrompt,选择你的答案
+QuestionWaiting,答案已提交，等待对手……
+QuestionWinnerYou,抢答成功，你赢得本次知识机会
+QuestionWinnerOpponent,{0} 赢得本次知识机会
+QuestionNoWinner,双方均未答对，本次没有奖励
+QuestionEnergyReward,奖励：获得 {0} 点能量
+QuestionExplanation,答案解析：{0}
+CategoryLanguage,语文
+CategoryMath,数学
+CategoryEnglish,英语
+CategoryHistory,历史
+CategoryGeography,地理
+CategoryBiology,生物
+CategoryCommonSense,常识
+CategoryLogic,逻辑推理
+CategoryBrainTeaser,脑筋急转弯
+LastChanceHeader,⚠ 绝境裁决 ⚠
+LastChanceTarget,命运给了你最后一次机会
+LastChanceWatching,{0} 正在挑战绝境裁决……
+LastChanceProgress,进度：{0}/{1}　剩余约 {2} 秒
+LastChanceInputPrompt,输入指定内容后回车
+LastChanceSucceeded,绝境挑战成功，恢复 {0} 点生命
+LastChanceFailed,绝境挑战失败，维持原死亡裁决
+MenuProfile,个人中心 · 战绩与标签墙
+ProfileConnectionPrompt,选择个人中心的数据服务器
+ProfileLan,局域网服务器
+ProfileOnline,在线服务器
+ProfileHeader,个人中心
+ProfileRecord,战绩：{0} 场　{1} 胜　{2} 负　{3} 平
+ProfileWinRate,胜率：{0}%
+ProfileTags,标签墙
+ProfileNoTags,还没有标签，先去完成一场联网对战吧。
+ProfileNotFound,这台服务器还没有你的个人数据，请先完成一次建房或加入房间。
+TagAwardPrompt,选择一个战后标签送给败者
+TagSkip,跳过，不授予标签
+TagGranted,标签“{0}”已经记录到 {1} 的个人中心
+TagExpires,有效期至 {0}
+TagPermanent,永久荣誉
+NetworkReconnected,网络短暂中断，已恢复当前对局
+FateHeader,⚖ 命运事件 ⚖
+FateRestore,恢复 {0} 点生命
+FateLoss,损失 {0} 点生命
+FateEnergy,获得 {0} 点能量
+FateDecisionPrompt,该事件对你不利，是否使用本局唯一一次申诉？
+FateAccept,接受裁决
+FateAppeal,提出申诉
+FateAppealUsed,申诉机会已用完，本次只能接受裁决
+FateArgumentPrompt,输入申诉理由（最多 200 字）
+FateArgumentTooLong,申诉理由不能超过 200 字
+FateWaiting,等待对方处理命运事件……
+FateJudging,裁判 Agent 正在审理申诉……
+FateApplied,裁决生效：{0}
+FateRevoked,申诉成功，事件已撤销：{0}
+NetworkActionDeadline,出招剩余约 {0} 秒
